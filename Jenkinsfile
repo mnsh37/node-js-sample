@@ -23,10 +23,21 @@ pipeline {
             }
         }
 
+        stage('Login to Docker Hub') {
+    steps {
+        script {
+            withDockerRegistry([ credentialsId: 'docker-hub', url: 'https://index.docker.io/v1/' ]) {
+                sh 'echo "Docker login successful"'
+            }
+        }
+    }
+}
+
+
         stage('Push Image to Docker Hub') {
             steps {
                 script {
-                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    withDockerRegistry([credentialsId: 'docker-hub', url: '']) {
                         sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
                     }
                 }
