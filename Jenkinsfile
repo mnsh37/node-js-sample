@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = 'mnshkumr/node-js-sample'
+        IMAGE_TAG = 'latest'
+        KUBE_DEPLOYMENT = 'node-app-deployment'
+        NAMESPACE = 'default'
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -8,21 +15,32 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building the application...'
+                script {
+                    sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                }
             }
         }
 
-        stage('Test') {
+        stage('Push Image to Docker Hub') {
             steps {
-                echo 'Running tests...'
+                script {
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                        sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                    }
+                }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
-                echo 'Deploying the application...'
+                script {
+                    sh """
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+                    """
+                }
             }
         }
     }
